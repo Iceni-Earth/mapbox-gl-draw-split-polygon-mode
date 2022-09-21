@@ -31,16 +31,18 @@ SplitPolygonMode.toDisplayFeatures = function (state, geojson, display) {
     let allPoly = [];
     state.main.forEach((el) => {
       if (booleanDisjoint(el, cuttingLineString)) {
-        throw new Error('Line must be outside of Polygon');
+        return // No intersection indicates there is nothing to cut
       } else {
         let polycut = polygonCut(
           el.geometry,
           cuttingLineString.geometry,
           'piece-'
         );
-        polycut.id = el.id;
-        this._ctx.api.add(polycut);
-        allPoly.push(polycut)
+        if (polycut) {
+          polycut.id = el.id;
+          this._ctx.api.add(polycut);
+          allPoly.push(polycut);
+        }
       }
     });
     this.fireUpdate(allPoly)
@@ -78,7 +80,10 @@ function polygonCut(poly, line, idPrefix) {
   }
 
   intersectPoints = lineIntersect(poly, line);
-  if (intersectPoints.features.length == 0) {
+  if (
+    intersectPoints.features.length == 0 ||       // No intersection OR
+    (intersectPoints.features.length % 2) !== 0   // Intersects an uneven nº of points, meaning the line either starts or ends inside the shape
+  ) {
     return retVal;
   }
 
