@@ -1,21 +1,21 @@
 import { events } from "@mapbox/mapbox-gl-draw/src/constants";
-import lineIntersect from '@turf/line-intersect';
-import booleanDisjoint from '@turf/boolean-disjoint';
-import { lineString } from '@turf/helpers';
-import lineOffset from '@turf/line-offset';
-import lineToPolygon from '@turf/line-to-polygon';
-import difference from '@turf/difference';
+import lineIntersect from "@turf/line-intersect";
+import booleanDisjoint from "@turf/boolean-disjoint";
+import { lineString } from "@turf/helpers";
+import lineOffset from "@turf/line-offset";
+import lineToPolygon from "@turf/line-to-polygon";
+import difference from "@turf/difference";
 
 const SplitPolygonMode = {};
 
 SplitPolygonMode.onSetup = function () {
   let main = this.getSelected()
-    .filter((f) => f.type === 'Polygon' || f.type === 'MultiPolygon')
+    .filter((f) => f.type === "Polygon" || f.type === "MultiPolygon")
     .map((f) => f.toGeoJSON());
 
   if (main.length < 1) {
     throw new Error(
-      'Please select a feature/features (Polygon or MultiPolygon) to split!'
+      "Please select a feature/features (Polygon or MultiPolygon) to split!"
     );
   }
 
@@ -27,16 +27,16 @@ SplitPolygonMode.onSetup = function () {
 SplitPolygonMode.toDisplayFeatures = function (state, geojson, display) {
   display(geojson);
 
-  this.changeMode('passing_mode_line_string', (cuttingLineString) => {
+  this.changeMode("passing_mode_line_string", (cuttingLineString) => {
     let allPoly = [];
     state.main.forEach((el) => {
       if (booleanDisjoint(el, cuttingLineString)) {
-        return // No intersection indicates there is nothing to cut
+        return; // No intersection indicates there is nothing to cut
       } else {
         let polycut = polygonCut(
           el.geometry,
           cuttingLineString.geometry,
-          'piece-'
+          "piece-"
         );
         if (polycut) {
           polycut.id = el.id;
@@ -45,23 +45,23 @@ SplitPolygonMode.toDisplayFeatures = function (state, geojson, display) {
         }
       }
     });
-    this.fireUpdate(allPoly)
+    this.fireUpdate(allPoly);
   });
 };
 
 SplitPolygonMode.fireUpdate = function (newF) {
   this.map.fire(events.UPDATE, {
-    action: 'SplitPolygon',
-    features: newF
+    action: "SplitPolygon",
+    features: newF,
   });
-}
+};
 
 export default SplitPolygonMode;
 
 // from https://gis.stackexchange.com/a/344277/145409
 function polygonCut(poly, line, idPrefix) {
-  const THICK_LINE_UNITS = 'kilometers';
-  const THICK_LINE_WIDTH = 0.00001;
+  const THICK_LINE_UNITS = "kilometers";
+  const THICK_LINE_WIDTH = 0.0000001;
   var i, j, intersectPoints, forCut, forSelect;
   var thickLineString, thickLinePolygon, clipped;
   var polyCoords = [];
@@ -69,20 +69,20 @@ function polygonCut(poly, line, idPrefix) {
   var retVal = null;
 
   if (
-    (poly.type != 'Polygon' && poly.type != 'MultiPolygon') ||
-    line.type != 'LineString'
+    (poly.type != "Polygon" && poly.type != "MultiPolygon") ||
+    line.type != "LineString"
   ) {
     return retVal;
   }
 
-  if (typeof idPrefix === 'undefined') {
-    idPrefix = '';
+  if (typeof idPrefix === "undefined") {
+    idPrefix = "";
   }
 
   intersectPoints = lineIntersect(poly, line);
   if (
-    intersectPoints.features.length == 0 ||       // No intersection OR
-    (intersectPoints.features.length % 2) !== 0   // Intersects an uneven nº of points, meaning the line either starts or ends inside the shape
+    intersectPoints.features.length == 0 || // No intersection OR
+    intersectPoints.features.length % 2 !== 0 // Intersects an uneven nº of points, meaning the line either starts or ends inside the shape
   ) {
     return retVal;
   }
